@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">월간푸드</string>
+    <string name="action_settings">Settings</string>
+    <string name="default_notification_channel_id">monthfood_channel</string>
+    <string name="msg_token_fmt">토큰: %s</string>
+    <string name="happy_birthday">Happy BirthDay</string>
+    <string name="from_jj">from JJ</string>
+    <string name="permission">앱을 이용하시려면 권한을 허가하셔야 합니다.</string>
+    <string name="scheme_app">mysdisapp</string>
+    <string name="host_app">mysdislink</string>
+</resources>

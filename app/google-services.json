@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "394923706225",
+    "project_id": "monthfood-c9ce9",
+    "storage_bucket": "monthfood-c9ce9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394923706225:android:2c1d61dcc0b25fc45b58d0",
+        "android_client_info": {
+          "package_name": "kr.co.dreameut.monthfood"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "394923706225-9k8eu0738nrb3uf076d2jf3u58vfcti6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.co.dreameut.monthfood",
+            "certificate_hash": "12e3d6b21936143cf36c32bdc6646417f6774ca4"
+          }
+        },
+        {
+          "client_id": "394923706225-9ca6c90ki23m5bna4emmeue86dn3v23f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJbOGa8pANyol487jHqJb6kVr0kvfHyuA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "394923706225-9ca6c90ki23m5bna4emmeue86dn3v23f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
