@@ -17,6 +17,9 @@ class SP {
         const val CLOSE_RELOAD = "close_reload"
         const val BACK_JS = "back_js"
         const val BACK_STOP = "back_stop"
+        const val PERMISSION_OK = "permission_ok"
+        const val DATE_LONG = "dateLong"
+        const val URL = "url"
 
         fun setData(context: Context, key: String?, value: String?) {
             val prefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
@@ -28,6 +31,18 @@ class SP {
         fun getData(context: Context, key: String?, default_val: String?): String? {
             val prefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
             return prefs.getString(key, default_val)
+        }
+
+        fun setData(context : Context, key:String?, value: Long){
+            val prefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+            editor.putLong(key, value)
+            editor.apply()
+        }
+
+        fun getData(context: Context, key: String?, default_val: Long): Long? {
+            val prefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
+            return prefs.getLong(key, default_val)
         }
 
         fun setStringArrayPref(context: Context, key: String, values: ArrayList<String>) {

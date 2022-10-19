@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import android.webkit.CookieManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -26,12 +27,14 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.net.URLEncoder
+import java.util.*
 
 class MainActivity : BaseActivity(){
 
     private lateinit var binding: ActivityMainBinding
     var targetUrl : String = ""
     private lateinit var endData : EndData
+    private lateinit var cookieManager : CookieManager
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -44,7 +47,7 @@ class MainActivity : BaseActivity(){
         init()
     }
 
-    override fun loadUrl(url : String) {
+    override fun loadUrl(url: String) {
         binding.webView.loadUrl(url)
     }
 
@@ -61,13 +64,16 @@ class MainActivity : BaseActivity(){
         init()
     }
 
+
     override fun onResume() {
         super.onResume()
+        if(SP.getData(this, SP.URL, "")!!.isNotEmpty()){
+            binding.webView.loadUrl(SP.getData(this, SP.URL, "")!!)
+            SP.setData(this, SP.URL, "")
+        }
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-    }
+
 
 
 
@@ -86,6 +92,19 @@ class MainActivity : BaseActivity(){
     }
 
     private fun init(){
+//        targetUrl = try {
+//            intent.getStringExtra("tarUrl")!!
+//        } catch (e: Exception) {
+//            Const.URL
+//        }
+//
+//
+//        if(targetUrl == Const.URL){
+//            val intent = Intent(this@MainActivity,  SplashActivity::class.java)
+//            startActivity(intent)
+//        }
+//        loginTask()
+
         GlobalScope.launch(Dispatchers.Default) { launch(Dispatchers.IO) {
             FirebaseDynamicLinks.getInstance().getDynamicLink(intent).addOnSuccessListener {
                 if(it==null){
@@ -96,8 +115,6 @@ class MainActivity : BaseActivity(){
                     } ?: run {
                         //normal
                         targetUrl = Const.URL
-                        val intent = Intent(this@MainActivity,  SplashActivity::class.java)
-                        startActivity(intent)
                     }
                 }else{
                     //다이내믹 링크로 왔을때
@@ -109,6 +126,9 @@ class MainActivity : BaseActivity(){
                 loginTask()
             }
         } }
+
+
+
     }
 
     private fun adkNotificationPermission(){
@@ -175,6 +195,7 @@ class MainActivity : BaseActivity(){
             }
         }
     }
+
 
     override fun onBackPressed() {
         val yn = SP.getData(this, SP.BACK_STOP, "N")

@@ -33,7 +33,7 @@ class EndDialog(private val baseActivity: BaseActivity, val mList: ArrayList<End
         try {
             binding = DialogEndPopupBinding.inflate(inflater,container, false)
             dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
+            SP.setData(baseActivity, SP.DATE_LONG, Util.MAX)
             binding.rvEnd.adapter = Adapter()
             binding.rvEnd.setHasFixedSize(true)
             val mGridLayoutManager = GridLayoutManager(baseActivity, 2)

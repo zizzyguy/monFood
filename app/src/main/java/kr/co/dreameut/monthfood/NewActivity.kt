@@ -17,6 +17,10 @@ class NewActivity : BaseActivity(){
 
     private lateinit var binding: ActivityNewBinding
 
+    override fun loadUrl(url: String) {
+        binding.webView.loadUrl(url)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -26,10 +30,6 @@ class NewActivity : BaseActivity(){
         intent.getStringExtra("tarUrl")?.let {
             binding.webView.loadUrl(it)
         }
-    }
-
-    override fun loadUrl(url : String) {
-        TODO("Not yet implemented")
     }
 
     override fun onBackPressed() {

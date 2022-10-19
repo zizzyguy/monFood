@@ -114,7 +114,8 @@ class EndDialogV2(private val baseActivity: BaseActivity, val mList: ArrayList<E
                     binding.tvSalePrice.text = item.pSalePrice
                     binding.tvOriginalPrice.text = item.pOriginalPrice
                     binding.tvOriginalPrice.paintFlags = binding.tvOriginalPrice.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                    Glide.with(baseActivity).load(item.pGImg).transform(CenterCrop(), GranularRoundedCorners(26f,26f,0f,0f)).into(binding.ivImg)
+                    val round = Util.getPixel(baseActivity, 10f)
+                    Glide.with(baseActivity).load(item.pGImg).transform(CenterCrop(), GranularRoundedCorners(round,round,0f,0f)).into(binding.ivImg)
                     binding.itemView.setOnClickListener {
                         val intent = Intent(baseActivity, NewActivity::class.java)
                         intent.putExtra("tarUrl", item.url)

@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import android.util.TypedValue
-import android.webkit.JavascriptInterface
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
@@ -17,6 +17,12 @@ import java.util.*
 class Util {
 
     companion object{
+
+        const val MAX = 9000000000000000000L
+
+        fun check30(context: Context): Boolean {
+            return SP.getData(context, SP.DATE_LONG, MAX)!! + 1000L * 60 * 50  < Date().time
+        }
 
         fun getToken(listener: FcmGetSuccessListener){
 
@@ -78,10 +84,11 @@ class Util {
             }
         }
 
-        fun getPixel(context: Context, dp : Float) : Float?{
+        fun getPixel(context: Context, dp : Float) : Float{
             val dm = context.resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, dm)
         }
+
 
 
         private fun capitalize(s: String?): String {

@@ -8,4 +8,5 @@
     <string name="permission">앱을 이용하시려면 권한을 허가하셔야 합니다.</string>
     <string name="scheme_app">mysdisapp</string>
     <string name="host_app">mysdislink</string>
+    <string name="kakao_ad_track_id">4045198245390665688</string>
 </resources>

@@ -4,20 +4,21 @@
     package="kr.co.dreameut.monthfood">
 
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"/>
+    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove"/>
-
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
+        tools:node="remove" />
     <queries>
         <package android:name="kr.co.samsungcard.mpocket" />
         <package android:name="com.shcard.smartpay" />
@@ -71,30 +72,49 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.MyApplication.NoActionBar">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".MainActivity"
+            android:autoVerify="true"
+            android:exported="true"
+            android:theme="@style/Theme.MyApplication.NoActionBar">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
                     android:host="monthfood.page.link"
-                    android:scheme="https"/>
+                    android:scheme="https" />
+                <data
+                    android:host="monfood.co.kr"
+                    android:scheme="https" />
+                <data
+                    android:host="monfood.co.kr"
+                    android:scheme="http" />
+                <data
+                    android:host="m.monfood.co.kr"
+                    android:scheme="https" />
+                <data
+                    android:host="m.monfood.co.kr"
+                    android:scheme="http" />
+                <data
+                    android:host="monfoodlink"
+                    android:scheme="monfoodapp" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".NewActivity"
             android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".SplashActivity"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
@@ -102,6 +122,15 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
 
         <!-- 푸쉬이미지 -->
         <meta-data
@@ -115,6 +144,10 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
+
+        <meta-data
+            android:name="com.kakao.ad.tracker.TRACK_ID"
+            android:value="@string/kakao_ad_track_id" />
     </application>
 
 </manifest>

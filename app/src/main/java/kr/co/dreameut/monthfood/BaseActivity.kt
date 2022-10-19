@@ -3,7 +3,9 @@ package kr.co.dreameut.monthfood
 import android.Manifest
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +13,7 @@ import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
 import android.provider.Settings
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -24,56 +27,68 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.play.core.review.ReviewManagerFactory
 import java.io.File
+import java.io.IOException
 import java.net.URISyntaxException
 import java.text.SimpleDateFormat
 import java.util.*
 
 
-abstract class BaseActivity : AppCompatActivity() {
+abstract class BaseActivity : AppCompatActivity(){
 
     val TAG = "zest"
     val RC_CALL = 645
     val RC_STORAGE = 6878
     private lateinit var mWebView: WebView
     var className = ""
-    var mWebViewImageUpload: ValueCallback<Array<Uri>>? = null
-    var mCameraPhotoPath: String? = null
+    var toServer: ValueCallback<Array<Uri>>? = null
 
+    private var currentPhotoPath: String? = ""
+    /**
+     * NewActivity 실행하면서 url 던저주면 MainActivity에서 실행
+     */
     var arUrl: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult(),
             ActivityResultCallback<ActivityResult> { result ->
-                try {
-                    if(result.data?.getStringExtra("url") !=null){
-                        result.data!!.getStringExtra("url")?.let { loadUrl(it) }
-                    }
-                } catch (e: Exception) {
-                }
+                result.data?.getStringExtra("url")?.let { loadUrl(it) }
+
             })
+
 
     var arImageChooser: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult(),
             ActivityResultCallback<ActivityResult> { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val intent = result.data
-
-                    if (intent == null) { //바로 사진을 찍어서 올리는 경우
-                        val results = arrayOf(Uri.parse(mCameraPhotoPath))
-                        mWebViewImageUpload!!.onReceiveValue(results!!)
-                    } else { //사진 앱을 통해 사진을 가져온 경우
-                        val results = intent!!.data!!
-                        mWebViewImageUpload!!.onReceiveValue(arrayOf(results!!))
+                if (result.resultCode == Activity.RESULT_OK) {
+                    var imageData = result.data
+                    // 갤러리에서 사진 받아왔어요
+                    if (imageData != null) {
+                        val result = arrayOf(Uri.parse(imageData.data.toString()))
+                        toServer?.onReceiveValue(result)
+                    } else {
+                        // 찍은 사진이 있네요?
+                        if (currentPhotoPath?.isNotEmpty()!!) {
+                            imageData = Intent()
+                            imageData.data = Uri.fromFile(File(currentPhotoPath))
+                            val result = arrayOf(Uri.parse(imageData.data.toString()))
+                            toServer?.onReceiveValue(result)
+                            //이도 저도 안왔어요
+                        } else {
+                            toServer?.onReceiveValue(null)
+                            toServer = null
+                        }
                     }
-                } else { //취소 한 경우 초기화
-                    mWebViewImageUpload!!.onReceiveValue(null)
-                    mWebViewImageUpload = null
+                } else {
+                    toServer?.onReceiveValue(null)
+                    toServer = null
+
                 }
             }
         )
 
-    abstract fun loadUrl(url : String)
+    abstract  fun loadUrl( url: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,19 +96,55 @@ abstract class BaseActivity : AppCompatActivity() {
         className = componentName.shortClassName.replace(".", "")
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let {
+            if(!it.getStringExtra("tarUrl").isNullOrEmpty()){
+                val intent = Intent(this@BaseActivity, MainActivity::class.java)
+                intent.putExtra("tarUrl", it.getStringExtra("tarUrl"))
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                startActivity(intent)
+            }
+        }
+    }
+
+    fun restart(){
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        val componentName = intent?.component
+        val mainIntent = Intent.makeRestartActivityTask(componentName)
+        startActivity(mainIntent)
+        Runtime.getRuntime().exit(0)
+    }
+
+
     override fun onResume() {
         super.onResume()
+        if(Util.check30(this)){
+            SP.setData(this, SP.DATE_LONG, Util.MAX)
+            mWebView.postDelayed({restart()}, 1000)
+        }
+
         val openReload = SP.getData(this, SP.OPEN_RELOAD, "")
         if (openReload == "Y") {
             SP.setData(this, SP.OPEN_RELOAD, "")
             mWebView.reload()
         }
 
-        val closeReload = SP.getData(this, SP.CLOSE_RELOAD, "");
+        val closeReload = SP.getData(this, SP.CLOSE_RELOAD, "")
         if (closeReload!!.isNotEmpty()) {
             SP.setData(this, SP.CLOSE_RELOAD, "")
             mWebView.loadUrl("javascript:webview_reload(${closeReload})")
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        SP.setData(this, SP.DATE_LONG, Date().time)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SP.setData(this, SP.DATE_LONG, Util.MAX)
     }
 
 
@@ -140,6 +191,7 @@ abstract class BaseActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
     }
+
 
     inner class WebChromeClient : android.webkit.WebChromeClient() {
         override fun onJsAlert(
@@ -222,7 +274,7 @@ abstract class BaseActivity : AppCompatActivity() {
             // 웹뷰 간 연동
             val transport = resultMsg?.obj as WebView.WebViewTransport
             transport.webView = childWebView
-            resultMsg?.sendToTarget()
+            resultMsg.sendToTarget()
             return true
         }
 
@@ -241,51 +293,68 @@ abstract class BaseActivity : AppCompatActivity() {
                     arrayOf(Manifest.permission.CAMERA, READ_EXTERNAL_STORAGE),
                     RC_STORAGE
                 )
-            } else {
-                try {
-                    mWebViewImageUpload = filePathCallback!!
-                    var takePictureIntent: Intent?
-                    takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                    if (takePictureIntent.resolveActivity(packageManager) != null) {
-                        var photoFile: File?
-
-                        photoFile = createImageFile()
-                        takePictureIntent.putExtra("PhotoPath", mCameraPhotoPath)
-
-                        if (photoFile != null) {
-                            mCameraPhotoPath = "file:${photoFile.absolutePath}"
-                            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
-                                Uri.fromFile(photoFile))
-                        } else takePictureIntent = null
-                    }
-                    val contentSelectionIntent =
-                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                    contentSelectionIntent.type = "image/*"
-
-                    var intentArray: Array<Intent?>
-
-                    if (takePictureIntent != null) intentArray = arrayOf(takePictureIntent)
-                    else intentArray = takePictureIntent?.get(0)!!
-
-                    val chooserIntent = Intent(Intent.ACTION_CHOOSER)
-                    chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
-                    chooserIntent.putExtra(Intent.EXTRA_TITLE, "사용할 앱을 선택해주세요.")
-                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray)
-                    arImageChooser.launch(chooserIntent)
-                } catch (e: Exception) {
-                }
-                return true
+                return false
             }
+            chooser(filePathCallback)
             return true
         }
 
-        private fun createImageFile(): File? {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-            val imageFileName = "img_" + timeStamp + "_"
-            val storageDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            return File.createTempFile(imageFileName, ".jpg", storageDir)
+        private fun chooser(filePathCallback: ValueCallback<Array<Uri>>?) {
+            toServer = filePathCallback
+
+            var state = Environment.getExternalStorageState()
+            if (!TextUtils.equals(state, Environment.MEDIA_MOUNTED)) {
+                return
+            }
+
+            var cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            cameraIntent.resolveActivity(packageManager!!)?.also {
+                // Create the File where the photo should go
+                val photoFile: File? = try {
+                    createImageFile2()
+                } catch (ex: IOException) {
+                    // Error occurred while creating the File
+                    null
+                }
+                // Continue only if the File was successfully created
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(this@BaseActivity,
+                        BuildConfig.APPLICATION_ID + ".provider",
+                        it
+                    )
+                    cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                }
+            }
+
+
+            var intent = Intent(Intent.ACTION_PICK).apply {
+                type = MediaStore.Images.Media.CONTENT_TYPE
+                data = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            }
+
+            Intent.createChooser(intent, "사진 가져올 방법을 선택하세요").run {
+                putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+                arImageChooser.launch(this)
+            }
+
         }
+
+
+        @Throws(IOException::class)
+        private fun createImageFile2(): File {
+            // Create an image file name
+            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+            val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
+            return File.createTempFile(
+                "JPEG_${timeStamp}_", /* prefix */
+                ".jpg", /* suffix */
+                storageDir /* directory */
+            ).apply {
+                // Save a file: path for use with ACTION_VIEW intents
+                currentPhotoPath = absolutePath
+            }
+        }
+
 
         override fun onCloseWindow(window: WebView?) {
             super.onCloseWindow(window)
@@ -297,6 +366,9 @@ abstract class BaseActivity : AppCompatActivity() {
 
         override fun onPageFinished(view: WebView?, url: String?) {
             super.onPageFinished(view, url)
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().acceptCookie()
+            CookieManager.getInstance().flush()
         }
 
         override fun onReceivedError(
@@ -348,24 +420,26 @@ abstract class BaseActivity : AppCompatActivity() {
             }
 
             if (request?.url?.scheme == "https") {
-                view?.loadUrl(request?.url.toString())
+                view?.loadUrl(request.url.toString())
                 return true
             }
 
             if (request?.url?.scheme == "tel") {
-                val intent = Intent(Intent.ACTION_DIAL, Uri.parse(request?.url.toString()))
+                val intent = Intent(Intent.ACTION_DIAL, Uri.parse(request.url.toString()))
                 startActivity(intent)
                 return true
             }
 
             if (request?.url?.scheme == "mailto") {
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(request?.url.toString()))
+                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(request.url.toString()))
                 startActivity(intent)
                 return true
             }
 
 
-            if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("javascript:") && !url.startsWith("intent")) {
+            if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("javascript:") && !url.startsWith(
+                    "intent")
+            ) {
                 //외부 앱에 대한 URL scheme 대응
                 var intent: Intent? = null
                 return try {
@@ -380,7 +454,8 @@ abstract class BaseActivity : AppCompatActivity() {
                     //handleNotFoundPaymentScheme()에서 처리되지 않은 것 중, url로부터 package정보를 추출할 수 있는 경우 market이동 처리
                     val packageName = intent.getPackage()
                     if (packageName != null) {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
+                        startActivity(Intent(Intent.ACTION_VIEW,
+                            Uri.parse("market://details?id=$packageName")))
                         return true
                     }
                     false
@@ -505,23 +580,21 @@ abstract class BaseActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun goNextWebView(url: String) {
-            handler.post {
                 val intent = Intent(mContext, NewActivity::class.java)
                 intent.putExtra("tarUrl", url)
                 arUrl.launch(intent)
-            }
+
         }
 
         @JavascriptInterface
         fun finishForUrl(url: String) {
             handler.post {
-                goHome()
-                if(this@BaseActivity.className == "NewActivity"){
+                if (this@BaseActivity.className == "NewActivity") {
                     val intent = Intent()
-                    intent.putExtra("url",url)
+                    intent.putExtra("url", url)
                     setResult(1000, intent)
                     finish()
-                }else{
+                } else {
                     mWebView.loadUrl(url)
                 }
 //                val intent = Intent(this@BaseActivity, MainActivity::class.java)
@@ -577,7 +650,16 @@ abstract class BaseActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
-        fun goHome() {
+        fun goHome(url : String) {
+            //TODO 해당 url로 Main WebView loading
+            handler.post {
+                SP.setData(this@BaseActivity, SP.URL, url)
+                ActivityManager.allActivityFinishExceptMain()
+            }
+        }
+
+        @JavascriptInterface
+        fun goHome(){
             handler.post {
                 ActivityManager.allActivityFinishExceptMain()
             }
