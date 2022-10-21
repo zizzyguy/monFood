@@ -20,6 +20,7 @@ class SP {
         const val PERMISSION_OK = "permission_ok"
         const val DATE_LONG = "dateLong"
         const val URL = "url"
+        const val REVIEW = "review"
 
         fun setData(context: Context, key: String?, value: String?) {
             val prefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)

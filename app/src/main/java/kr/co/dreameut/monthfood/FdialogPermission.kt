@@ -19,10 +19,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class FdialogPermission(private val mActvitiy: SplashActivity) : DialogFragment(){
+class FdialogPermission() : DialogFragment(){
 
     lateinit var binding : DialogPermissionBinding
-    val TAG_DIALOG = "DIALOG_PERMISSON"
 
 
     override fun onCreateView(
@@ -35,8 +34,7 @@ class FdialogPermission(private val mActvitiy: SplashActivity) : DialogFragment(
         isCancelable = false
 
         binding.btnPermissionOk.setOnClickListener {
-            SP.setData(mActvitiy, SP.PERMISSION_OK, "Y")
-            mActvitiy.goMainActivity()
+            activity?.let { it1 -> SP.setData(it1, SP.PERMISSION_OK, "Y") }
             dismiss()
         }
         return binding.root

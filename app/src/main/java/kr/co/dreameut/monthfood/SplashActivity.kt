@@ -25,20 +25,11 @@ class SplashActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         binding = ActivitiySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        SP.setData(this, SP.BACK_STOP, "N")
         if (!KakaoAdTracker.isInitialized) {
             KakaoAdTracker.init(applicationContext, getString(R.string.kakao_ad_track_id))
         }
-
-        if (SP.getData(this, SP.PERMISSION_OK, "N") == "N") {
-            showDialogPermission()
-        } else {
-            goMainActivity()
-        }
-    }
-
-    private fun showDialogPermission() {
-        val dialog = FdialogPermission(this)
-        dialog.show(supportFragmentManager, "enddialog")
+        goMainActivity()
     }
 
     fun goMainActivity(){

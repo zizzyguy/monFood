@@ -5,7 +5,6 @@ import android.Manifest.permission.*
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -37,7 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-abstract class BaseActivity : AppCompatActivity(){
+abstract class BaseActivity : AppCompatActivity() {
 
     val TAG = "zest"
     val RC_CALL = 645
@@ -45,8 +44,10 @@ abstract class BaseActivity : AppCompatActivity(){
     private lateinit var mWebView: WebView
     var className = ""
     var toServer: ValueCallback<Array<Uri>>? = null
+    var isPush = false
 
     private var currentPhotoPath: String? = ""
+
     /**
      * NewActivity 실행하면서 url 던저주면 MainActivity에서 실행
      */
@@ -88,7 +89,7 @@ abstract class BaseActivity : AppCompatActivity(){
             }
         )
 
-    abstract  fun loadUrl( url: String)
+    abstract fun loadUrl(url: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,16 +100,17 @@ abstract class BaseActivity : AppCompatActivity(){
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         intent?.let {
-            if(!it.getStringExtra("tarUrl").isNullOrEmpty()){
+            if (!it.getStringExtra("tarUrl").isNullOrEmpty()) {
                 val intent = Intent(this@BaseActivity, MainActivity::class.java)
                 intent.putExtra("tarUrl", it.getStringExtra("tarUrl"))
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                 startActivity(intent)
+                isPush = true
             }
         }
     }
 
-    fun restart(){
+    fun restart() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val componentName = intent?.component
         val mainIntent = Intent.makeRestartActivityTask(componentName)
@@ -119,9 +121,9 @@ abstract class BaseActivity : AppCompatActivity(){
 
     override fun onResume() {
         super.onResume()
-        if(Util.check30(this)){
+        if (Util.check30(this) && !isPush) {
             SP.setData(this, SP.DATE_LONG, Util.MAX)
-            mWebView.postDelayed({restart()}, 1000)
+            mWebView.postDelayed({ restart() }, 1000)
         }
 
         val openReload = SP.getData(this, SP.OPEN_RELOAD, "")
@@ -502,6 +504,27 @@ abstract class BaseActivity : AppCompatActivity(){
             } catch (e: Exception) {
 
             }
+
+
+
+        }
+
+        @JavascriptInterface
+        fun showReviewDialog() {
+            handler.post{
+                if(SP.getData(this@BaseActivity, SP.REVIEW, "N") != "Y"){
+                    val dialog = ReviewDialog()
+                    dialog.show(supportFragmentManager, "reviewDialog")
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun showPermissionDialog(){
+            if (SP.getData(this@BaseActivity, SP.PERMISSION_OK, "N") != "Y") {
+                val dialog = FdialogPermission()
+                dialog.show(supportFragmentManager, "enddialog")
+            }
         }
 
         @JavascriptInterface
@@ -580,9 +603,9 @@ abstract class BaseActivity : AppCompatActivity(){
 
         @JavascriptInterface
         fun goNextWebView(url: String) {
-                val intent = Intent(mContext, NewActivity::class.java)
-                intent.putExtra("tarUrl", url)
-                arUrl.launch(intent)
+            val intent = Intent(mContext, NewActivity::class.java)
+            intent.putExtra("tarUrl", url)
+            arUrl.launch(intent)
 
         }
 
@@ -650,7 +673,7 @@ abstract class BaseActivity : AppCompatActivity(){
         }
 
         @JavascriptInterface
-        fun goHome(url : String) {
+        fun goHome(url: String) {
             //TODO 해당 url로 Main WebView loading
             handler.post {
                 SP.setData(this@BaseActivity, SP.URL, url)
@@ -659,7 +682,7 @@ abstract class BaseActivity : AppCompatActivity(){
         }
 
         @JavascriptInterface
-        fun goHome(){
+        fun goHome() {
             handler.post {
                 ActivityManager.allActivityFinishExceptMain()
             }
